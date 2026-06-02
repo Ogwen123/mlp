@@ -1,20 +1,19 @@
 ﻿#include "mlp.h"
 #include "data.h"
-#include "reader.h"
 
 class MLP {
 private:
 	Dataframe data;
 	Dataframe weights;
 public:
-	MLP() {};
+	MLP() : data(Dataframe()) {};
 	~MLP() {};
 
 	void create();
 };
 
 void MLP::create(){
-	this->data = Reader::read_csv("./Iris.csv");
+	this->data.load_csv("./Iris.csv");
 	data.display();
 }
 

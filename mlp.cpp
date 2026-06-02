@@ -5,6 +5,7 @@
 class MLP {
 private:
 	Dataframe data;
+	Dataframe weights;
 public:
 	MLP() {};
 	~MLP() {};

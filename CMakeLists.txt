@@ -12,7 +12,7 @@ endif()
 project ("mlp")
 
 # Add source to this project's executable.
-add_executable (mlp "mlp.cpp" "mlp.h" "reader.cpp" "reader.h" "data.cpp" "data.h")
+add_executable (mlp "mlp.cpp" "mlp.h" "reader.cpp" "reader.h" "data.cpp" "data.h" "preprocessing.cpp" "preprocessing.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET mlp PROPERTY CXX_STANDARD 20)

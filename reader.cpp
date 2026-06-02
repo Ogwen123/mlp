@@ -24,9 +24,9 @@ std::vector<std::string> Reader::scsv(std::string line) {
 	return Reader::split(line, ',');
 }
 
-std::vector<float> Reader::fcsv(std::string line) {
+std::vector<double> Reader::dcsv(std::string line) {
 	std::vector<std::string> split = Reader::split(line, ',');
-	std::vector<float> res;
+	std::vector<double> res;
 
 	for (auto item : split) {
 		res.push_back(atof(item.c_str()));

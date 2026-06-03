@@ -9,11 +9,13 @@ public:
 	MLP() : data(Dataframe()) {};
 	~MLP() {};
 
-	void create();
+	void create(std::vector<int> hidden_layers);
 };
 
-void MLP::create(){
+void MLP::create(std::vector<int> hidden_layers){
+	std::cout << "Loading" << std::endl;
 	this->data.load_csv("./Iris.csv");
+	std::cout << "Loaded" << std::endl;
 	data.display();
 }
 
@@ -22,7 +24,7 @@ int main()
 	MLP mlp;
 
 	try {
-		mlp.create();
+		mlp.create({3, 3});
 	}
 	catch (const std::exception& err) {
 		std::cout << err.what() << std::endl;

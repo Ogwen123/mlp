@@ -8,6 +8,7 @@
 #include <format>
 #include <algorithm>
 #include <iterator>
+#include <numeric>
 
 using TypedColumn = std::variant<
 	std::vector<int>,

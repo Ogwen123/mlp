@@ -13,5 +13,7 @@ namespace Utils {
 	std::vector<std::string> split(std::string input, char delimiter = ',');
 	std::string pad(std::string input, int total_length);
 	std::string to_string(TypedCell variant);
-	TypedCell get_typed_cell(TypedColumn* column, int index);
+	std::string to_type(TypedCell* v);
+	std::string to_type(TypedColumn* v);
+	TypedCell get_typed_cell_from_column(TypedColumn* column, int index);
 }

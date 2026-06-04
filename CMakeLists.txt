@@ -15,7 +15,7 @@ project ("mlp")
 add_executable (mlp "mlp.cpp" "mlp.h" "utils.cpp" "utils.h" "data.cpp" "data.h" "preprocessing.cpp" "preprocessing.h" "matrix.h" "matrix.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET mlp PROPERTY CXX_STANDARD 20)
+  set_property(TARGET mlp PROPERTY CXX_STANDARD 23)
 endif()
 
 # TODO: Add tests and install targets if needed.

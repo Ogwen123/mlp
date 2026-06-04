@@ -69,7 +69,7 @@ void Dataframe::from_csv_format(std::deque<std::string> lines, bool parse_column
 }
 
 void Dataframe::display() {
-	std::vector<int> lengths;
+	std::vector<size_t> lengths;
 
 	auto row_wise = this->row_wise();
 
@@ -103,7 +103,92 @@ void Dataframe::display() {
 }
 
 TypedColumn Dataframe::choose_column_type(std::vector<std::string> column) {
-	return column;
+	enum type {
+		boolean,
+		integer,
+		_double,
+		string
+	};
+	std::string boolean_strings[4] = { "t", "f", "true", "false" };
+
+	enum type highest = boolean;
+
+	for (auto item : column) {
+		std::string lower;
+		// make lowercase for easier boolean checking
+		std::transform(item.begin(), item.end(), lower.begin(),
+			[](unsigned char c) { return std::tolower(c); });
+
+		// try boolean if not already past it
+		if (highest <= boolean && std::find(std::begin(boolean_strings), std::end(boolean_strings), item) != std::end(boolean_strings)) {
+			highest = boolean;
+		}
+
+		// try integer if not already past it
+		if (highest <= integer) {
+			try {
+				long long int i = std::stoll(item);
+				highest = integer;
+			}
+			catch (std::invalid_argument err) {
+				highest = _double;
+			}
+		}
+
+		// try double if not already past it
+		if (highest <= _double) {
+			try {
+				double d = std::stod(item);
+				highest = _double;
+			}
+			catch (std::invalid_argument err) {
+				highest = string;
+			}
+		}
+	}
+
+	switch (highest) {
+	case boolean: 
+	{
+		std::vector<bool> bools;
+		bools.reserve(column.size());
+
+		std::transform(column.begin(), column.end(), bools.begin(), [](std::string item) {
+			if (item.size() == 0) {
+				return false;
+			}
+			else {
+				return (item[0] == 't' || item[0] == 'T');
+			}
+			});
+
+		return bools;
+	}
+	case integer:
+	{
+		std::vector<int> ints;
+		ints.reserve(column.size());
+
+		std::transform(column.begin(), column.end(), ints.begin(), [](std::string item) {
+			return std::stoi(item);
+			});
+
+		return ints;
+	}
+	case _double:
+	{
+		std::vector<double> doubles;
+		doubles.reserve(column.size());
+
+		std::transform(column.begin(), column.end(), doubles.begin(), [](std::string item) {
+			return std::stod(item);
+			});
+
+		return doubles;
+	}
+	case string:
+		return column;
+	}
 }
 TypedRows Dataframe::row_wise() {
 	TypedRows output;

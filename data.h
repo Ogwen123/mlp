@@ -11,6 +11,7 @@
 #include <numeric>
 
 using TypedColumn = std::variant<
+	std::vector<bool>,
 	std::vector<int>,
 	std::vector<double>,
 	std::vector<std::string>

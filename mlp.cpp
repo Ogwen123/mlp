@@ -16,7 +16,11 @@ void MLP::create(std::vector<int> hidden_layers){
 	std::cout << "Loading" << std::endl;
 	this->data.load_csv("./Iris.csv");
 	std::cout << "Loaded" << std::endl;
-	data.display();
+	this->data.display();
+	std::cout << "Pruning index column" << std::endl;
+	this->data.iprune({0});
+	std::cout << "Pruned index column" << std::endl;
+	this->data.display();
 }
 
 int main()

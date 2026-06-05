@@ -147,7 +147,7 @@ TypedColumn Dataframe::choose_column_type(std::vector<std::string> column) {
 
 		return doubles;
 	}
-	case string:
+	default:
 		return column;
 	}
 }
@@ -170,8 +170,8 @@ void Dataframe::load_csv(std::string path) {
 	this->from_csv_format(lines);
 }
 
-TypedRows Dataframe::row_wise() {
-	TypedRows output;
+std::vector<TypedRow> Dataframe::row_wise() {
+	std::vector<TypedRow> output;
 	std::vector<TypedCell> buffer;
 
 	if (this->data.size() == 0) {
@@ -192,12 +192,78 @@ TypedRows Dataframe::row_wise() {
 	return output;
 }
 
-float Dataframe::icol(size_t index) { return 1.0; }
-float Dataframe::col(std::string name) { return 1.0; }
-float Dataframe::irow(size_t index) { return 1.0; }
+TypedColumn Dataframe::icol(size_t index) {
+	return this->data[index];
+}
 
-Dataframe Dataframe::move(std::string col_names[]) {}
-void Dataframe::prune(std::string col_names[]) {}
+TypedColumn Dataframe::col(std::string name) {
+	auto index = std::find(this->column_names.begin(), this->column_names.end(), name);
+	if (index == this->column_names.end()) {
+		throw std::runtime_error("Dataframe::col: Provided column name does not exist");
+	}
+
+	return this->data[std::distance(this->column_names.begin(), index)];
+}
+
+TypedRow Dataframe::irow(size_t index) {
+	TypedRow output;
+
+	for (auto col : this->data) {
+		output.push_back(Utils::get_typed_cell_from_column(&col, index));
+	}
+
+	return output;
+}
+
+void Dataframe::add_column(TypedColumn column) {
+	this->data.push_back(column);
+}
+
+Dataframe Dataframe::move(std::initializer_list<std::string> col_names) {
+	if (col_names.size() == 0) {
+		throw std::runtime_error("Dataframe::move: Empty col_names provided.");
+	}
+	
+	Dataframe target;
+	for (int i = 0; i < col_names.size(); i++) {
+		try {
+			target.add_column(this->col(col_names.begin()[i]));
+		}
+		catch (std::runtime_error err) {
+			throw std::runtime_error(std::format("Dataframe::move: error when getting column contents ({})", err.what()));
+		}
+	}
+
+	this->prune(col_names);
+	return target;
+}
+
+void Dataframe::prune(std::initializer_list<std::string> col_names) {
+	if (col_names.size() == 0) {
+		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
+	}
+	for (int i = 0; i < col_names.size(); i++) {
+		auto index_iter = std::find(this->column_names.begin(), this->column_names.end(), col_names.begin()[i]);
+		if (index_iter == this->column_names.end()) {
+			throw std::runtime_error("Dataframe::prune: Provided column name does not exist");
+		}
+
+		auto index = std::distance(this->column_names.begin(), index_iter);
+		this->data.erase(this->data.begin() + index);
+		this->column_names.erase(this->column_names.begin() + index);
+	}
+}
+
+void Dataframe::iprune(std::initializer_list<int> col_index) {
+	if (col_index.size() == 0) {
+		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
+	}
+	for (int i = 0; i < col_index.size(); i++) {
+		std::cout << "pruning" << std::endl;
+		this->data.erase(this->data.begin() + col_index.begin()[i]);
+		this->column_names.erase(this->column_names.begin() + col_index.begin()[i]);
+	}
+}
 
 void Dataframe::display() {
 	std::vector<size_t> lengths;

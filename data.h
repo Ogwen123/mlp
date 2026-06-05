@@ -10,6 +10,7 @@
 #include <iterator>
 #include <numeric>
 #include <ranges>
+#include <list>
 
 using TypedColumn = std::variant<
 	std::vector<bool>,
@@ -24,7 +25,7 @@ using TypedCell = std::variant<
 	std::string
 >;
 
-using TypedRows = std::vector<std::vector<TypedCell>>;
+using TypedRow = std::vector<TypedCell>;
 
 /*
 Store data per column, mimic a Pandas Dataframe
@@ -42,13 +43,15 @@ public:
 	Dataframe() : column_names(std::vector<std::string>()), data(std::vector<TypedColumn>()) {};
 
 	void load_csv(std::string path);
-	TypedRows row_wise();
-	float icol(size_t index);
-	float col(std::string name);
-	float irow(size_t index);
-	// Move specified rows into a new Dataframe and return it
-	Dataframe move(std::string col_names[]);
+	std::vector<TypedRow> row_wise();
+	TypedColumn icol(size_t index);
+	TypedColumn col(std::string name);
+	TypedRow irow(size_t index);
+	void add_column(TypedColumn column);
+	// Move specified rows into a new Dataframe and return it, the columns will be added to the new Dataframe in the order they are given in col_names
+	Dataframe move(std::initializer_list<std::string> col_names);
 	// Remove the specfied columns
-	void prune(std::string col_names[]);
+	void prune(std::initializer_list<std::string> col_names);
+	void iprune(std::initializer_list<int> col_names);
 	void display();
 };

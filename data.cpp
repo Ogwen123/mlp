@@ -242,24 +242,31 @@ void Dataframe::prune(std::initializer_list<std::string> col_names) {
 	if (col_names.size() == 0) {
 		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
 	}
-	for (int i = 0; i < col_names.size(); i++) {
-		auto index_iter = std::find(this->column_names.begin(), this->column_names.end(), col_names.begin()[i]);
-		if (index_iter == this->column_names.end()) {
-			throw std::runtime_error("Dataframe::prune: Provided column name does not exist");
-		}
 
-		auto index = std::distance(this->column_names.begin(), index_iter);
-		this->data.erase(this->data.begin() + index);
-		this->column_names.erase(this->column_names.begin() + index);
-	}
+	this->data = std::views::zip(this->column_names, this->data) 
+		| std::views::filter([&col_names](const std::tuple<std::string, TypedColumn>& col) {
+			return (std::ranges::find(col_names, std::get<0>(col)) == col_names.end());
+		}) 
+		| std::views::transform([](const std::tuple<std::string, TypedColumn>& col) {
+			return std::get<1>(col);
+		})
+		| std::ranges::to<std::vector>();
+
+	std::erase_if(this->column_names, [&col_names](const std::string& name) {
+		return std::ranges::find(col_names, name) != col_names.end();
+		});
 }
 
 void Dataframe::iprune(std::initializer_list<int> col_index) {
 	if (col_index.size() == 0) {
 		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
 	}
+
 	for (int i = 0; i < col_index.size(); i++) {
-		std::cout << "pruning" << std::endl;
+		if (col_index.begin()[i] > this->data.size()) {
+			continue;
+		}
+
 		this->data.erase(this->data.begin() + col_index.begin()[i]);
 		this->column_names.erase(this->column_names.begin() + col_index.begin()[i]);
 	}

@@ -50,8 +50,9 @@ public:
 	void add_column(TypedColumn column);
 	// Move specified rows into a new Dataframe and return it, the columns will be added to the new Dataframe in the order they are given in col_names
 	Dataframe move(std::initializer_list<std::string> col_names);
-	// Remove the specfied columns
+	// Remove the specfied columns, ignore column names that don't exist
 	void prune(std::initializer_list<std::string> col_names);
+	// Remove specificed columns, ignores columns out of range
 	void iprune(std::initializer_list<int> col_names);
 	void display();
 };

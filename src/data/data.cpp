@@ -1,5 +1,5 @@
 #include "data.h"
-#include "utils.h"
+#include "../utils.h"
 
 static inline int COLUMN_PADDING = 1;
 
@@ -62,7 +62,7 @@ TypedColumn Dataframe::choose_column_type(std::vector<std::string> column) {
 	for (auto item : column) {
 		std::string lower;
 		// make lowercase for easier boolean checking
-		std::transform(item.begin(), item.end(), lower.begin(),
+		std::transform(item.begin(), item.end(), std::back_inserter(lower),
 			[](unsigned char c) { return std::tolower(c); });
 
 		// try boolean if not already past it
@@ -77,11 +77,13 @@ TypedColumn Dataframe::choose_column_type(std::vector<std::string> column) {
 				size_t idx;
 				long long int i = std::stoll(item, &idx);
 				if (idx < item.size()) { // means stoll() stopped before the end of the string, so the string as a whole is not a valid int
-					throw std::invalid_argument("");
+					highest = _double;
+					continue;
 				}
-
-				highest = integer;
-				continue;
+				else {
+					highest = integer;
+					continue;
+				}
 			}
 			catch (std::invalid_argument err) {
 				highest = _double;
@@ -95,11 +97,13 @@ TypedColumn Dataframe::choose_column_type(std::vector<std::string> column) {
 				size_t idx;
 				double d = std::stod(item, &idx);
 				if (idx < item.size()) { // means stod() stopped before the end of the string, so the string as a whole is not a valid int
-					throw std::invalid_argument("");
+					highest = string;
+					continue;
 				}
-
-				highest = _double;
-				continue;
+				else {
+					highest = _double;
+					continue;
+				}
 			}
 			catch (std::invalid_argument err) {
 				highest = string;
@@ -215,11 +219,40 @@ TypedRow Dataframe::irow(size_t index) {
 	return output;
 }
 
-void Dataframe::add_column(TypedColumn column) {
+Shape Dataframe::shape() {
+	return {
+		this->data.size(),
+		Utils::column_length(&this->data[0])
+	};
+}
+
+std::vector<std::string> Dataframe::names() {
+	return this->column_names;
+}
+
+bool Dataframe::exists(std::string name) {
+	return std::ranges::find(this->column_names, name) != this->column_names.end();
+}
+
+void Dataframe::add_column(std::string name, TypedColumn column) {
+	if (this->exists(name)) {
+		throw std::runtime_error(std::format("Dataframe::add_column: Column name '{}' already exists", name));
+	}
+
+	this->column_names.push_back(name);
 	this->data.push_back(column);
 }
 
-Dataframe Dataframe::move(std::initializer_list<std::string> col_names) {
+void Dataframe::concat(Dataframe df) {
+	for (auto name : df.names()) {
+		if (this->exists(name)) continue;
+
+		this->column_names.push_back(name);
+		this->data.push_back(df.col(name));
+	}
+}
+
+Dataframe Dataframe::take(std::initializer_list<std::string> col_names) {
 	if (col_names.size() == 0) {
 		throw std::runtime_error("Dataframe::move: Empty col_names provided.");
 	}
@@ -227,7 +260,8 @@ Dataframe Dataframe::move(std::initializer_list<std::string> col_names) {
 	Dataframe target;
 	for (int i = 0; i < col_names.size(); i++) {
 		try {
-			target.add_column(this->col(col_names.begin()[i]));
+			std::string name = col_names.begin()[i];
+			target.add_column(name, this->col(col_names.begin()[i]));
 		}
 		catch (std::runtime_error err) {
 			throw std::runtime_error(std::format("Dataframe::move: error when getting column contents ({})", err.what()));

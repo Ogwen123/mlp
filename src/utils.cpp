@@ -78,3 +78,9 @@ std::string Utils::to_type(TypedCell* v) {
 std::string Utils::to_type(TypedColumn* v) {
 	return to_type_impl<std::vector<bool>, std::vector<int>, std::vector<double>>(v);
 }
+
+size_t Utils::column_length(TypedColumn* col) {
+	return std::visit([](const auto& vec) -> std::size_t {
+		return vec.size();
+	}, *col); 
+}

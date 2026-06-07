@@ -1,5 +1,6 @@
 ﻿#include "mlp.h"
-#include "data.h"
+#include "./data/data.h"
+#include "./data/preprocessing.h"
 
 class MLP {
 private:
@@ -20,6 +21,17 @@ void MLP::create(std::vector<int> hidden_layers){
 	std::cout << "Pruning index column" << std::endl;
 	this->data.prune({"Id"});
 	std::cout << "Pruned index column" << std::endl;
+	this->data.display();
+
+	std::cout << "Loading" << std::endl;
+	this->data.load_csv("./OHE_test.csv");
+	std::cout << "Loaded" << std::endl;
+	this->data.display();
+	std::cout << "Performing OHE" << std::endl;
+	Dataframe encoded = Preprocessing::one_hot_encoding(this->data.take({ "pet" }));
+
+	this->data.concat(encoded);
+	std::cout << "Performed OHE" << std::endl;
 	this->data.display();
 }
 

@@ -27,6 +27,11 @@ using TypedCell = std::variant<
 
 using TypedRow = std::vector<TypedCell>;
 
+struct Shape {
+	size_t rows;
+	size_t columns;
+};
+
 /*
 Store data per column, mimic a Pandas Dataframe
 */
@@ -44,12 +49,22 @@ public:
 
 	void load_csv(std::string path);
 	std::vector<TypedRow> row_wise();
+
 	TypedColumn icol(size_t index);
 	TypedColumn col(std::string name);
 	TypedRow irow(size_t index);
-	void add_column(TypedColumn column);
+	Shape shape();
+	std::vector<std::string> names();
+	// Check if a colum name already exists in the Dataframe
+	bool exists(std::string name);
+
+	// Throws an error if the column name already exists
+	void add_column(std::string name, TypedColumn column);
+	// Adds Dataframe data to this Dataframe, skips columns with the same name as an existing column
+	void concat(Dataframe df);
+
 	// Move specified rows into a new Dataframe and return it, the columns will be added to the new Dataframe in the order they are given in col_names
-	Dataframe move(std::initializer_list<std::string> col_names);
+	Dataframe take(std::initializer_list<std::string> col_names);
 	// Remove the specfied columns, ignore column names that don't exist
 	void prune(std::initializer_list<std::string> col_names);
 	// Remove specificed columns, ignores columns out of range

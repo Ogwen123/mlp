@@ -49,5 +49,41 @@ Dataframe Preprocessing::one_hot_encoding(Dataframe data) {
 	return encoded;
 }
 
-void StandardScaler::fit(Dataframe data) {};
+void StandardScaler::fit(Dataframe data) {
+	for (auto name : data.names()) {
+		auto col_data = std::visit([name](const auto& vec) -> std::pair<double, double> {
+			Dataframe expanded;
+
+			using T = std::decay_t<decltype(vec)>::value_type;
+			std::cout << typeid(T).name() << std::endl;
+
+			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, double>)) {
+				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
+			}
+			else {
+				double mean = 0;
+				double std = 0;
+				double m2 = 0;
+				int count = 0;
+
+				for (auto _item : vec) {
+					double item = static_cast<double>(_item);
+
+					count++;
+					double old = mean;
+					mean += (item - mean) / count;
+					m2 += (item - old) * (item - mean);
+				}
+				std = sqrt(m2 / count);
+
+				return std::pair<double, double>(mean, std);
+			}
+			}, data.col(name));
+
+		this->data.push_back({
+			std::get<0>(col_data),
+			std::get<1>(col_data)
+		});
+	}
+};
 Dataframe StandardScaler::transform(Dataframe data) { return data; };

@@ -32,6 +32,11 @@ void MLP::create(std::vector<int> hidden_layers){
 
 	this->data.concat(encoded);
 	std::cout << "Performed OHE" << std::endl;
+	std::cout << "Performing scaling" << std::endl;
+	StandardScaler scaler;
+	Dataframe scaled = scaler.fit_transform(this->data.take({ "age" }));
+
+	this->data.concat(scaled);
 	this->data.display();
 }
 

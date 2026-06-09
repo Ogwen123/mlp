@@ -16,7 +16,6 @@ Dataframe Preprocessing::one_hot_encoding(Dataframe data) {
 			Dataframe expanded;
 
 			using T = std::decay_t<decltype(vec)>::value_type;
-			std::cout << typeid(T).name() << std::endl;
 
 			if (!(std::is_same_v<T, int> || std::is_same_v<T, std::string>)) {
 				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
@@ -49,13 +48,12 @@ Dataframe Preprocessing::one_hot_encoding(Dataframe data) {
 	return encoded;
 }
 
+
 void StandardScaler::fit(Dataframe data) {
 	for (auto name : data.names()) {
 		auto col_data = std::visit([name](const auto& vec) -> std::pair<double, double> {
-			Dataframe expanded;
 
 			using T = std::decay_t<decltype(vec)>::value_type;
-			std::cout << typeid(T).name() << std::endl;
 
 			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, double>)) {
 				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
@@ -78,12 +76,52 @@ void StandardScaler::fit(Dataframe data) {
 
 				return std::pair<double, double>(mean, std);
 			}
-			}, data.col(name));
+		}, data.col(name));
 
-		this->data.push_back({
+		this->data.insert({ name, {
 			std::get<0>(col_data),
 			std::get<1>(col_data)
-		});
+		} });
 	}
 };
-Dataframe StandardScaler::transform(Dataframe data) { return data; };
+Dataframe StandardScaler::transform(Dataframe data) {
+	if (this->data.size() == 0) {
+		throw std::runtime_error("StandardScaler::transform: No fit data");
+	}
+
+	Dataframe standard;
+
+	for (auto name : data.names()) {
+		auto iter = this->data.find(name);
+		if (iter == this->data.end()) {
+			throw std::runtime_error("StandardScaler::transform: Found column that was not provided in fit()");
+		}
+		PerColumnCharacteristics c = iter->second;
+
+		auto new_col = std::visit([c](const auto& vec) -> std::vector<double> {
+			std::vector<double> standardised;
+
+			using T = std::decay_t<decltype(vec)>::value_type;
+
+			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, double>)) {
+				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
+			}
+			else {
+				for (auto item : vec) {
+					standardised.push_back((item - c.mean) / c.std);
+				}
+
+				return standardised;
+			}
+		}, data.col(name));
+
+		standard.add_column(name, new_col);
+	}
+
+	return standard;
+};
+
+Dataframe StandardScaler::fit_transform(Dataframe data) {
+	this->fit(data);
+	return this->transform(data);
+}

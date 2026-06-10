@@ -50,7 +50,7 @@ std::string Utils::to_string(TypedCell variant) {
     throw std::runtime_error("Utils::to_string: unhandled variant type");
 }
 
-TypedCell Utils::get_typed_cell_from_column(TypedColumn* column, int index) {
+TypedCell Utils::get_typed_cell_from_column(TypedColumn* column, size_t index) {
 	if (std::vector<bool> const* pval = std::get_if<std::vector<bool>>(column))
 		return TypedCell((*pval)[index]);
 

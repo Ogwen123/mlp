@@ -17,7 +17,7 @@ Dataframe Preprocessing::one_hot_encoding(Dataframe data) {
 
 			using T = std::decay_t<decltype(vec)>::value_type;
 
-			if (!(std::is_same_v<T, int> || std::is_same_v<T, std::string>)) {
+			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, std::string>)) {
 				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
 			}
 			else {
@@ -59,10 +59,10 @@ void StandardScaler::fit(Dataframe data) {
 				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
 			}
 			else {
-				double mean = 0;
-				double std = 0;
-				double m2 = 0;
-				int count = 0;
+				double mean{ 0 };
+				double std{ 0 };
+				double m2{ 0 };
+				int count{ 0 };
 
 				for (auto _item : vec) {
 					double item = static_cast<double>(_item);

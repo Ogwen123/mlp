@@ -15,6 +15,6 @@ namespace Utils {
 	std::string to_string(TypedCell variant);
 	std::string to_type(TypedCell* v);
 	std::string to_type(TypedColumn* v);
-	TypedCell get_typed_cell_from_column(TypedColumn* column, int index);
+	TypedCell get_typed_cell_from_column(TypedColumn* column, size_t index);
 	size_t column_length(TypedColumn* column);
 }

@@ -11,7 +11,7 @@ void Dataframe::from_csv_format(std::deque<std::string> lines, bool parse_column
 	std::vector<std::string> column_names;
 	std::vector<std::vector<std::string>> columns;
 
-	size_t expected_length = 0;
+	size_t expected_length{ 0 };
 
 	if (parse_column_names) {
 		column_names = Utils::split(lines.front());
@@ -41,6 +41,7 @@ void Dataframe::from_csv_format(std::deque<std::string> lines, bool parse_column
 
 	this->column_names = column_names;
 	std::vector<TypedColumn> typed_columns;
+	typed_columns.reserve(columns.size());
 
 	for (auto col : columns) {
 		typed_columns.push_back(this->choose_column_type(col));
@@ -48,21 +49,23 @@ void Dataframe::from_csv_format(std::deque<std::string> lines, bool parse_column
 	this->data = typed_columns;
 }
 
-TypedColumn Dataframe::choose_column_type(std::vector<std::string> column) {
+static std::string boolean_strings[4] = { "t", "f", "true", "false" };
+
+
+TypedColumn Dataframe::choose_column_type(const std::vector<std::string>& column) {
 	enum type {
 		boolean,
 		integer,
 		_double,
 		string
 	};
-	std::string boolean_strings[4] = { "t", "f", "true", "false" };
 
 	enum type highest = boolean;
 
-	for (auto item : column) {
-		std::string lower;
+	for (auto _item : column) {
+		std::string item;
 		// make lowercase for easier boolean checking
-		std::transform(item.begin(), item.end(), std::back_inserter(lower),
+		std::transform(_item.begin(), _item.end(), std::back_inserter(item),
 			[](unsigned char c) { return std::tolower(c); });
 
 		// try boolean if not already past it
@@ -176,7 +179,6 @@ void Dataframe::load_csv(std::string path) {
 
 std::vector<TypedRow> Dataframe::row_wise() {
 	std::vector<TypedRow> output;
-	std::vector<TypedCell> buffer;
 
 	if (this->data.size() == 0) {
 		return output;
@@ -186,12 +188,12 @@ std::vector<TypedRow> Dataframe::row_wise() {
 		return vec.size();
 	}, this->data[0]);
 
-	for (int i = 0; i < length; i++) {
-		for (int j = 0; j < this->data.size(); j++) {
-			buffer.push_back(Utils::get_typed_cell_from_column(&(this->data[j]), i));
+	output.resize(length, std::vector<TypedCell>(this->data.size()));
+
+	for (int i = 0; i < this->data.size(); i++) {
+		for (int j = 0; j < length; j++) {
+			output[j][i] = (Utils::get_typed_cell_from_column(&(this->data[i]), j));
 		}
-		output.push_back(buffer);
-		buffer.clear();
 	}
 	return output;
 }
@@ -200,7 +202,7 @@ TypedColumn Dataframe::icol(size_t index) {
 	return this->data[index];
 }
 
-TypedColumn Dataframe::col(std::string name) {
+TypedColumn Dataframe::col (const std::string& name) const {
 	auto index = std::find(this->column_names.begin(), this->column_names.end(), name);
 	if (index == this->column_names.end()) {
 		throw std::runtime_error("Dataframe::col: Provided column name does not exist");
@@ -226,15 +228,15 @@ Shape Dataframe::shape() {
 	};
 }
 
-std::vector<std::string> Dataframe::names() {
+std::vector<std::string> Dataframe::names() const {
 	return this->column_names;
 }
 
-bool Dataframe::exists(std::string name) {
+bool Dataframe::exists(const std::string& name) const {
 	return std::ranges::find(this->column_names, name) != this->column_names.end();
 }
 
-void Dataframe::add_column(std::string name, TypedColumn column) {
+void Dataframe::add_column(const std::string& name, const TypedColumn& column) {
 	if (this->exists(name)) {
 		throw std::runtime_error(std::format("Dataframe::add_column: Column name '{}' already exists", name));
 	}
@@ -243,7 +245,7 @@ void Dataframe::add_column(std::string name, TypedColumn column) {
 	this->data.push_back(column);
 }
 
-void Dataframe::concat(Dataframe df) {
+void Dataframe::concat(const Dataframe& df) {
 	for (auto name : df.names()) {
 		if (this->exists(name)) continue;
 
@@ -252,7 +254,7 @@ void Dataframe::concat(Dataframe df) {
 	}
 }
 
-Dataframe Dataframe::take(std::initializer_list<std::string> col_names) {
+Dataframe Dataframe::take(const std::initializer_list<std::string>& col_names) {
 	if (col_names.size() == 0) {
 		throw std::runtime_error("Dataframe::move: Empty col_names provided.");
 	}
@@ -272,7 +274,7 @@ Dataframe Dataframe::take(std::initializer_list<std::string> col_names) {
 	return target;
 }
 
-void Dataframe::prune(std::initializer_list<std::string> col_names) {
+void Dataframe::prune(const std::initializer_list<std::string>& col_names) {
 	if (col_names.size() == 0) {
 		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
 	}
@@ -291,18 +293,24 @@ void Dataframe::prune(std::initializer_list<std::string> col_names) {
 		});
 }
 
-void Dataframe::iprune(std::initializer_list<int> col_index) {
+void Dataframe::iprune(const std::initializer_list<int>& col_index) {
 	if (col_index.size() == 0) {
 		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
 	}
 
-	for (int i = 0; i < col_index.size(); i++) {
-		if (col_index.begin()[i] > this->data.size()) {
+	std::vector<int> sorted(col_index);
+	std::sort(sorted.begin(), sorted.end());
+	// update index to account for previous erasures
+	int count{ 0 };
+
+	for (int i = 0; i < sorted.size(); i++) {
+		if (sorted.begin()[i] >= this->data.size()) {
 			continue;
 		}
 
-		this->data.erase(this->data.begin() + col_index.begin()[i]);
-		this->column_names.erase(this->column_names.begin() + col_index.begin()[i]);
+		this->data.erase(this->data.begin() + sorted.begin()[i] - count);
+		this->column_names.erase(this->column_names.begin() + sorted.begin()[i] - count);
+		count++;
 	}
 }
 
@@ -316,10 +324,16 @@ void Dataframe::display() {
 			return s.length() + COLUMN_PADDING;
 		});
 
+	// cache stringified values to avoid calling to_string multiple times per cell
+	std::vector<std::vector<std::string>> stringified;
+
 	for (auto row : row_wise) {
+		auto& str_vec = stringified.emplace_back();
 		for (int i = 0; i < row.size(); i++) {
-			if (Utils::to_string(row[i]).size() >= lengths[i]) {
-				lengths[i] = Utils::to_string(row[i]).size() + COLUMN_PADDING;
+			std::string s = Utils::to_string(row[i]);
+			str_vec.push_back(s);
+			if (s.size() >= lengths[i]) {
+				lengths[i] = s.size() + COLUMN_PADDING;
 			}
 		}
 	}
@@ -331,9 +345,9 @@ void Dataframe::display() {
 	std::string sep = std::string(std::accumulate(lengths.begin(), lengths.end(), 0), '-');
 	std::cout << std::endl << sep << '\n';
 
-	for (auto row : row_wise) {
+	for (auto row : stringified) {
 		for (int i = 0; i < row.size(); i++) {
-			std::cout << Utils::pad(Utils::to_string(row[i]), lengths[i]);
+			std::cout << Utils::pad(row[i], lengths[i]);
 		}
 		std::cout << std::endl;
 	}

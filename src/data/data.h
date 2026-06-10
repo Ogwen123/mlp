@@ -39,35 +39,34 @@ class Dataframe {
 private:
 	Dataframe(std::vector<std::string> columns, std::vector<TypedColumn> data) : column_names(columns), data(data) {}
 	void from_csv_format(std::deque<std::string> data, bool parse_column_names = true);
-	TypedColumn choose_column_type(std::vector<std::string> column);
+	TypedColumn choose_column_type(const std::vector<std::string>& column);
 
 	std::vector<std::string> column_names;
 	std::vector<TypedColumn> data;
 
 public:
-	Dataframe() : column_names(std::vector<std::string>()), data(std::vector<TypedColumn>()) {};
-
+	Dataframe() : column_names({}), data({}) {};
 	void load_csv(std::string path);
 	std::vector<TypedRow> row_wise();
 
 	TypedColumn icol(size_t index);
-	TypedColumn col(std::string name);
+	TypedColumn col(const std::string& name) const;
 	TypedRow irow(size_t index);
 	Shape shape();
-	std::vector<std::string> names();
+	std::vector<std::string> names() const;
 	// Check if a colum name already exists in the Dataframe
-	bool exists(std::string name);
+	bool exists(const std::string& name) const;
 
 	// Throws an error if the column name already exists
-	void add_column(std::string name, TypedColumn column);
+	void add_column(const std::string& name, const TypedColumn& column);
 	// Adds Dataframe data to this Dataframe, skips columns with the same name as an existing column
-	void concat(Dataframe df);
+	void concat(const Dataframe& df);
 
 	// Move specified rows into a new Dataframe and return it, the columns will be added to the new Dataframe in the order they are given in col_names
-	Dataframe take(std::initializer_list<std::string> col_names);
+	Dataframe take(const std::initializer_list<std::string>& col_names);
 	// Remove the specfied columns, ignore column names that don't exist
-	void prune(std::initializer_list<std::string> col_names);
+	void prune(const std::initializer_list<std::string>& col_names);
 	// Remove specificed columns, ignores columns out of range
-	void iprune(std::initializer_list<int> col_names);
+	void iprune(const std::initializer_list<int>& col_names);
 	void display();
 };

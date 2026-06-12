@@ -79,6 +79,14 @@ std::string Utils::to_type(TypedColumn* v) {
 	return to_type_impl<std::vector<bool>, std::vector<int>, std::vector<double>>(v);
 }
 
+TypedColumn take_range(TypedColumn* column, int start, int end) {
+	return std::visit([start, end](const auto& vec) -> TypedColumn {
+		using T = typename std::decay_t<decltype(vec)>::value_type;
+
+		return std::vector<T>(vec.begin() + start, vec.begin() + start + end);
+	}, *column);
+}
+
 size_t Utils::column_length(TypedColumn* col) {
 	return std::visit([](const auto& vec) -> std::size_t {
 		return vec.size();

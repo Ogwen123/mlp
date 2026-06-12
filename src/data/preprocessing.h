@@ -8,6 +8,7 @@
 namespace Preprocessing {
 	// Perform one-hot encoding, assumes all given columns are categorical, accepts string and int columns
 	Dataframe one_hot_encoding(Dataframe data);
+
 }
 
 struct PerColumnCharacteristics {

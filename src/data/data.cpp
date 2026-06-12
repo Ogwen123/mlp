@@ -51,7 +51,6 @@ void Dataframe::from_csv_format(std::deque<std::string> lines, bool parse_column
 
 static std::string boolean_strings[4] = { "t", "f", "true", "false" };
 
-
 TypedColumn Dataframe::choose_column_type(const std::vector<std::string>& column) {
 	enum type {
 		boolean,
@@ -274,6 +273,22 @@ Dataframe Dataframe::take(const std::initializer_list<std::string>& col_names) {
 	return target;
 }
 
+Dataframe Dataframe::copy_rows(int start, int end) {
+	Dataframe output;
+
+	if (this->data.size() == 0) {
+		throw std::runtime_error("Dataframe::take_rows: Dataframe has no columns to take from.")
+	}
+
+	if (end < 0) end = Utils::column_length(&this->data[0]);
+
+	for (auto name : this->names()) {
+		TypedColumn col = this->col(name);
+
+		output.add_column(name, Utils::take_range(&col, start, end));
+	}
+}
+
 void Dataframe::prune(const std::initializer_list<std::string>& col_names) {
 	if (col_names.size() == 0) {
 		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
@@ -314,7 +329,7 @@ void Dataframe::iprune(const std::initializer_list<int>& col_index) {
 	}
 }
 
-void Dataframe::display() {
+void Dataframe::display(int max_display) {
 	std::vector<size_t> lengths;
 	auto row_wise = this->row_wise();
 
@@ -326,8 +341,10 @@ void Dataframe::display() {
 
 	// cache stringified values to avoid calling to_string multiple times per cell
 	std::vector<std::vector<std::string>> stringified;
-
+	int count{ 0 };
 	for (auto row : row_wise) {
+		if (count > max_display) break;
+		count++;
 		auto& str_vec = stringified.emplace_back();
 		for (int i = 0; i < row.size(); i++) {
 			std::string s = Utils::to_string(row[i]);

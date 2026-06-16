@@ -32,7 +32,7 @@ struct Shape {
 	size_t columns;
 
 	friend std::ostream& operator<<(std::ostream& os, const Shape& p) {
-		os << "Shape(" << p.rows << ", " << p.columns << ")";
+		os << "Shape(" << p.rows << " rows" << ", " << p.columns << " cols" << ")";
 		return os;
 	}
 };
@@ -69,7 +69,7 @@ public:
 
 	// Move specified rows into a new Dataframe and return it, the columns will be added to the new Dataframe in the order they are given in col_names
 	Dataframe take(const std::initializer_list<std::string>& col_names);
-	// Make a new dataframe with the rows from start to end, if end is not supplied it will default to the end of the list. Copies without deleting from original Dataframe
+	// Make a new dataframe with the rows from start (inclusive) to end (exclusive), if end is not supplied it will default to the end of the list. Copies without deleting from original Dataframe
 	Dataframe copy_rows(int start, int end = -1);
 	// Remove the specfied columns, ignore column names that don't exist
 	void prune(const std::initializer_list<std::string>& col_names);

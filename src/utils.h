@@ -16,6 +16,7 @@ namespace Utils {
 	std::string to_type(TypedCell* v);
 	std::string to_type(TypedColumn* v);
 	TypedCell get_typed_cell_from_column(TypedColumn* column, size_t index);
+	// Returns values from start (inclusive) to end (exclusive)
 	TypedColumn take_range(TypedColumn* column, int start, int end);
 	size_t column_length(TypedColumn* column);
 }

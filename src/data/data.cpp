@@ -222,8 +222,8 @@ TypedRow Dataframe::irow(size_t index) {
 
 Shape Dataframe::shape() {
 	return {
-		this->data.size(),
-		Utils::column_length(&this->data[0])
+		Utils::column_length(&this->data[0]),
+		this->data.size()
 	};
 }
 
@@ -277,7 +277,7 @@ Dataframe Dataframe::copy_rows(int start, int end) {
 	Dataframe output;
 
 	if (this->data.size() == 0) {
-		throw std::runtime_error("Dataframe::take_rows: Dataframe has no columns to take from.")
+		throw std::runtime_error("Dataframe::take_rows: Dataframe has no columns to take from.");
 	}
 
 	if (end < 0) end = Utils::column_length(&this->data[0]);
@@ -287,6 +287,8 @@ Dataframe Dataframe::copy_rows(int start, int end) {
 
 		output.add_column(name, Utils::take_range(&col, start, end));
 	}
+
+	return output;
 }
 
 void Dataframe::prune(const std::initializer_list<std::string>& col_names) {

@@ -49,7 +49,7 @@ Dataframe Preprocessing::one_hot_encoding(Dataframe data) {
 }
 
 
-void StandardScaler::fit(Dataframe data) {
+void StandardScaler::fit(const Dataframe& data) {
 	for (auto name : data.names()) {
 		auto col_data = std::visit([name](const auto& vec) -> std::pair<double, double> {
 
@@ -63,7 +63,7 @@ void StandardScaler::fit(Dataframe data) {
 				double std{ 0 };
 				double m2{ 0 };
 				int count{ 0 };
-
+				std::cout << "starting " << name << std::endl;
 				for (auto _item : vec) {
 					double item = static_cast<double>(_item);
 
@@ -73,7 +73,7 @@ void StandardScaler::fit(Dataframe data) {
 					m2 += (item - old) * (item - mean);
 				}
 				std = sqrt(m2 / count);
-
+				std::cout << "got std dev for " << name << std::endl;
 				return std::pair<double, double>(mean, std);
 			}
 		}, data.col(name));
@@ -84,7 +84,8 @@ void StandardScaler::fit(Dataframe data) {
 		} });
 	}
 };
-Dataframe StandardScaler::transform(Dataframe data) {
+
+void StandardScaler::transform(Dataframe& data) {
 	if (this->data.size() == 0) {
 		throw std::runtime_error("StandardScaler::transform: No fit data");
 	}
@@ -118,10 +119,12 @@ Dataframe StandardScaler::transform(Dataframe data) {
 		standard.add_column(name, new_col);
 	}
 
-	return standard;
+	data = standard;
 };
 
-Dataframe StandardScaler::fit_transform(Dataframe data) {
+void StandardScaler::fit_transform(Dataframe& data) {
+	std::cout << "hjuh" << std::endl;
 	this->fit(data);
-	return this->transform(data);
+	std::cout << "huih" << std::endl;
+	this->transform(data);
 }

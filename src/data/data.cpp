@@ -67,13 +67,24 @@ TypedColumn Dataframe::choose_column_type(const std::vector<std::string>& column
 		std::transform(_item.begin(), _item.end(), std::back_inserter(item),
 			[](unsigned char c) { return std::tolower(c); });
 
+		// an empty string keeps the current type for everything except int which becomes double to allow for NaNs
+		// an empty boolean is parsed to false
+		// an empty double is parsed to NaN
+		// an empty string is left as is
+		if (item.size() == 0) {
+			if (highest == integer) {
+				highest = _double;
+			}
+			continue;
+		}
+
 		// try boolean if not already past it
 		if (highest <= boolean && std::find(std::begin(boolean_strings), std::end(boolean_strings), item) != std::end(boolean_strings)) {
 			highest = boolean;
 			continue;
 		}
 
-		// try integer
+		// try integer if not already past it
 		if (highest <= integer) {
 			try {
 				size_t idx;
@@ -148,7 +159,13 @@ TypedColumn Dataframe::choose_column_type(const std::vector<std::string>& column
 		doubles.reserve(column.size());
 
 		std::transform(column.begin(), column.end(), std::back_inserter(doubles), [](std::string item) {
-			return std::stod(item);
+			if (item.size() == 0) {
+				return std::numeric_limits<double>::quiet_NaN();
+			}
+			else {
+				return std::stod(item);
+
+			}
 			});
 
 		return doubles;
@@ -310,12 +327,12 @@ void Dataframe::prune(const std::initializer_list<std::string>& col_names) {
 		});
 }
 
-void Dataframe::iprune(const std::initializer_list<int>& col_index) {
-	if (col_index.size() == 0) {
+void Dataframe::iprune(const std::vector<int>& col_indexes) {
+	if (col_indexes.size() == 0) {
 		throw std::runtime_error("Dataframe::prune: Empty col_names provided.");
 	}
 
-	std::vector<int> sorted(col_index);
+	std::vector<int> sorted(col_indexes);
 	std::sort(sorted.begin(), sorted.end());
 	// update index to account for previous erasures
 	int count{ 0 };
@@ -329,6 +346,55 @@ void Dataframe::iprune(const std::initializer_list<int>& col_index) {
 		this->column_names.erase(this->column_names.begin() + sorted.begin()[i] - count);
 		count++;
 	}
+}
+
+void Dataframe::remove_rows(const std::vector<int>& row_indexes) {
+	if (this->data.size() == 0) {
+		throw std::runtime_error("Dataframe::remove_rows: This Dataframe has no columns.");
+	}
+
+	size_t col_length = Utils::column_length(&this->data[0]);
+
+	std::vector<int> col_range(col_length);
+	std::iota(col_range.begin(), col_range.end(), 0);
+
+	for (int i = 0; i < data.size(); i++) {
+		this->data[i] = std::visit([col_range, row_indexes](const auto& vec) -> TypedColumn {
+			using T = typename std::decay_t<decltype(vec)>::value_type;
+
+			return std::views::zip(col_range, vec)
+				| std::views::filter([&row_indexes](const std::tuple<int, T>& item) {
+					return (std::ranges::find(row_indexes, std::get<0>(item)) == row_indexes.end());
+				})
+				| std::views::transform([](const std::tuple<int, T>& item) {
+					return std::get<1>(item);
+				})
+				| std::ranges::to<std::vector>();
+		}, this->data[i]);
+	}
+}
+
+void Dataframe::purge_NaNs() {
+	std::set<size_t> to_remove;
+
+	for (auto name : this->names()) {
+		TypedColumn col = this->col(name);
+
+		std::visit([&to_remove](const auto& vec) -> void {
+
+			using T = std::decay_t<decltype(vec)>::value_type;
+
+			if constexpr (std::is_same_v<T, double>) {
+				for (int i = 0; i < vec.size(); i++) {
+					if (std::isnan(vec[i])) {
+						to_remove.insert(i);
+					}
+				}
+			}
+			}, col);
+	}
+
+	this->remove_rows(std::vector<int>(to_remove.begin(), to_remove.end()));
 }
 
 void Dataframe::display(int max_display) {

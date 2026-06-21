@@ -11,6 +11,8 @@
 #include <numeric>
 #include <ranges>
 #include <list>
+#include <set>
+#include <cmath>
 
 using TypedColumn = std::variant<
 	std::vector<bool>,
@@ -74,6 +76,10 @@ public:
 	// Remove the specfied columns, ignore column names that don't exist
 	void prune(const std::initializer_list<std::string>& col_names);
 	// Remove specificed columns, ignores columns out of range
-	void iprune(const std::initializer_list<int>& col_names);
+	void iprune(const std::vector<int>& col_indexes);
+	// Remove rows at the provided indexes
+	void remove_rows(const std::vector<int>& row_indexes);
+	// Remove any rows with a NaN in any column
+	void purge_NaNs();
 	void display(int max_display = 150);
 };

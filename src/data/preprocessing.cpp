@@ -56,14 +56,13 @@ void StandardScaler::fit(const Dataframe& data) {
 			using T = std::decay_t<decltype(vec)>::value_type;
 
 			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, double>)) {
-				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
+				throw std::runtime_error(std::format("StandardScaler::fit: Invalid column type provided ({})", typeid(T).name()));
 			}
 			else {
 				double mean{ 0 };
 				double std{ 0 };
 				double m2{ 0 };
 				int count{ 0 };
-				std::cout << "starting " << name << std::endl;
 				for (auto _item : vec) {
 					double item = static_cast<double>(_item);
 
@@ -73,7 +72,6 @@ void StandardScaler::fit(const Dataframe& data) {
 					m2 += (item - old) * (item - mean);
 				}
 				std = sqrt(m2 / count);
-				std::cout << "got std dev for " << name << std::endl;
 				return std::pair<double, double>(mean, std);
 			}
 		}, data.col(name));

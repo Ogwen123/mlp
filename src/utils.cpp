@@ -35,32 +35,22 @@ std::vector<std::string> Utils::split(std::string line, char delimiter) {
 }
 
 std::string Utils::to_string(TypedCell variant) {
-    if (bool const* pval = std::get_if<bool>(&variant))
-        return std::to_string(*pval);
-
-    if (int const* pval = std::get_if<int>(&variant))
-        return std::to_string(*pval);
-
-    if (double const* pval = std::get_if<double>(&variant))
-        return std::to_string(*pval);
-
-    if (std::string const* pval = std::get_if<std::string>(&variant))
-        return *pval;
-
-    throw std::runtime_error("Utils::to_string: unhandled variant type");
+	return std::visit([](const auto& item) -> std::string {
+		using T = typename std::decay_t<decltype(item)>;
+		
+		if constexpr (std::is_same_v<T, std::string>) {
+			return item;
+		}
+		else {
+			return std::to_string(item);
+		}
+	}, variant);
 }
 
 TypedCell Utils::get_typed_cell_from_column(TypedColumn* column, size_t index) {
-	if (std::vector<bool> const* pval = std::get_if<std::vector<bool>>(column))
-		return TypedCell((*pval)[index]);
-
-	if (std::vector<int> const* pval = std::get_if<std::vector<int>>(column))
-		return TypedCell((*pval)[index]);
-
-	if (std::vector<double> const* pval = std::get_if<std::vector<double>>(column))
-		return TypedCell((*pval)[index]);
-
-	return (std::get<std::vector<std::string>>(*column))[index];
+	return std::visit([index](const auto& vec) -> TypedCell {
+		return TypedCell(vec[index]);
+	}, *column);
 }
 
 template <typename TBool, typename TInt, typename TDouble, typename Variant>

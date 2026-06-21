@@ -24,11 +24,12 @@ int main()
 			data->concat(op);
 		}
 		data->display();
+		data->purge_NaNs();
 
 		auto rows = data->shape().rows;
 
-		int training_end = (int)rows * TRAINING_PERCENT;
-		int validation_end = (int)rows * VALIDATION_PERCENT + training_end;
+		int training_end = (int) ((int)rows * TRAINING_PERCENT);
+		int validation_end = (int) ((int)rows * VALIDATION_PERCENT + training_end);
 
 		Dataframe training_x = data->copy_rows(0, training_end);
 		Dataframe training_y = training_x.take({ "median_house_value" });
@@ -47,17 +48,11 @@ int main()
 		auto validation_x_numeric = validation_x.take(numeric);
 		auto testing_x_numeric = testing_x.take(numeric);
 
-		std::cout << "1" << std::endl;
 		StandardScaler scaler;
-		std::cout << "2" << std::endl;
 		scaler.fit_transform(training_x_numeric);
-		std::cout << "3" << std::endl;
 		scaler.transform(validation_x_numeric);
-		std::cout << "4" << std::endl;
 		scaler.transform(testing_x_numeric);
-		std::cout << "5" << std::endl;
 		validation_x_numeric.display();
-		std::cout << "6" << std::endl;
 		MLP mlp;
 
 		mlp.create({3, 3});

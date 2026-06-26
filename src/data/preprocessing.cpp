@@ -50,6 +50,10 @@ Dataframe Preprocessing::one_hot_encoding(Dataframe data) {
 
 
 void StandardScaler::fit(const Dataframe& data) {
+	if (this->data.size() != 0) {
+		std::cout << "Warning: Overwriting fitted data in StandardScaler::fit." << std::endl;
+	}
+
 	for (auto name : data.names()) {
 		auto col_data = std::visit([name](const auto& vec) -> std::pair<double, double> {
 
@@ -121,8 +125,74 @@ void StandardScaler::transform(Dataframe& data) {
 };
 
 void StandardScaler::fit_transform(Dataframe& data) {
-	std::cout << "hjuh" << std::endl;
 	this->fit(data);
-	std::cout << "huih" << std::endl;
+	this->transform(data);
+}
+
+void OneHotEncoder::fit(const Dataframe& data) {
+	if (this->data.size() != 0) {
+		std::cout << "Warning: Overwriting fitted data in OneHotEncoder::fit." << std::endl;
+	}
+
+	std::unordered_map<std::string, std::vector<std::string>> fit;
+
+	for (auto name : data.names()) {
+		std::visit([&name, &fit](const auto& vec) {
+
+			using T = std::decay_t<decltype(vec)>::value_type;
+
+			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, std::string>)) {
+				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
+			}
+			else {
+				std::set<std::string> names;
+
+				for (int i = 0; i < vec.size(); i++) {
+					names.insert(str(vec[i]));
+				}
+				fit.insert({ name, std::vector<std::string>(names.begin(), names.end()) });
+			}
+		}, data.col(name));
+	}
+	this->data = fit;
+}
+
+void OneHotEncoder::transform(Dataframe& data) {
+	Dataframe encoded;
+
+	for (auto name : data.names()) {
+		auto col = std::visit([this, name](const auto& vec) -> Dataframe {
+			Dataframe expanded;
+
+			using T = std::decay_t<decltype(vec)>::value_type;
+
+			if constexpr (!(std::is_same_v<T, int> || std::is_same_v<T, std::string>)) {
+				throw std::runtime_error(std::format("Preprocessing::one_hot_encoding: Invalid column type provided ({})", typeid(T).name()));
+			}
+			else {
+				std::vector<std::string> names = this->data[name];
+				for (auto var_name : names) {
+					std::vector<int> col;
+					for (int i = 0; i < vec.size(); i++) {
+						if (var_name == str(vec[i])) {
+							col.push_back(1);
+						}
+						else {
+							col.push_back(0);
+						}
+					}
+					expanded.add_column(name + "_" + var_name, TypedColumn(col));
+				}
+				return expanded;
+			}
+			}, data.col(name));
+		encoded.concat(col);
+	}
+
+	data = encoded;
+}
+
+void OneHotEncoder::fit_transform(Dataframe& data) {
+	this->fit(data);
 	this->transform(data);
 }

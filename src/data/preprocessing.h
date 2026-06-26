@@ -28,3 +28,15 @@ public:
 	// Apply the fit and transform functions in one step.
 	void fit_transform(Dataframe& data);
 };
+
+class OneHotEncoder {
+private:
+	std::unordered_map<std::string, std::vector<std::string>> data;
+public:
+	// Computes and stored each category for each column
+	void fit(const Dataframe& data);
+	// Applies one hot encoding using the fitted categories for each column.
+	void transform(Dataframe& data);
+	// Apply the fit and transform functions in one step.
+	void fit_transform(Dataframe& data);
+};

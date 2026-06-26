@@ -221,7 +221,7 @@ TypedColumn Dataframe::icol(size_t index) {
 TypedColumn Dataframe::col (const std::string& name) const {
 	auto index = std::find(this->column_names.begin(), this->column_names.end(), name);
 	if (index == this->column_names.end()) {
-		throw std::runtime_error("Dataframe::col: Provided column name does not exist");
+		throw std::runtime_error(std::format("Dataframe::col: Provided column name does not exist {}", name));
 	}
 
 	return this->data[std::distance(this->column_names.begin(), index)];
@@ -272,7 +272,7 @@ void Dataframe::concat(const Dataframe& df) {
 
 Dataframe Dataframe::take(const std::initializer_list<std::string>& col_names) {
 	if (col_names.size() == 0) {
-		throw std::runtime_error("Dataframe::move: Empty col_names provided.");
+		throw std::runtime_error("Dataframe::take: Empty col_names provided.");
 	}
 	
 	Dataframe target;
@@ -282,7 +282,7 @@ Dataframe Dataframe::take(const std::initializer_list<std::string>& col_names) {
 			target.add_column(name, this->col(col_names.begin()[i]));
 		}
 		catch (std::runtime_error err) {
-			throw std::runtime_error(std::format("Dataframe::move: error when getting column contents ({})", err.what()));
+			throw std::runtime_error(std::format("Dataframe::take: error when getting column contents ({})", err.what()));
 		}
 	}
 

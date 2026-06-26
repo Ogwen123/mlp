@@ -18,15 +18,12 @@ int main()
 		std::cout << "Loaded" << std::endl;
 		std::cout << data->shape() << std::endl;
 
-		{ // scope block so op is deleted
-			Dataframe op = data->take({ "ocean_proximity" });
-			op = Preprocessing::one_hot_encoding(op);
-			data->concat(op);
-		}
 		data->display();
 		data->purge_NaNs();
 
 		auto rows = data->shape().rows;
+
+		// preprocess and split data
 
 		int training_end = (int) ((int)rows * TRAINING_PERCENT);
 		int validation_end = (int) ((int)rows * VALIDATION_PERCENT + training_end);
@@ -43,6 +40,7 @@ int main()
 		data.reset();
 
 		std::initializer_list<std::string> numeric = { "longitude","latitude","housing_median_age","total_rooms","total_bedrooms","population","households","median_income" };
+		std::initializer_list<std::string> categorical = { "ocean_proximity" };
 
 		auto training_x_numeric = training_x.take(numeric);
 		auto validation_x_numeric = validation_x.take(numeric);
@@ -52,7 +50,29 @@ int main()
 		scaler.fit_transform(training_x_numeric);
 		scaler.transform(validation_x_numeric);
 		scaler.transform(testing_x_numeric);
-		validation_x_numeric.display();
+
+		auto training_x_categorical = training_x.take(categorical);
+		auto validation_x_categorical = validation_x.take(categorical);
+		auto testing_x_categorical = testing_x.take(categorical);
+
+		OneHotEncoder encoder;
+		encoder.fit_transform(training_x_categorical);
+		encoder.transform(validation_x_categorical);
+		encoder.transform(testing_x_categorical);
+
+		training_x.concat(training_x_numeric);
+		training_x.concat(training_x_categorical);
+
+		validation_x.concat(validation_x_numeric);
+		validation_x.concat(validation_x_categorical);
+
+		testing_x.concat(testing_x_numeric);
+		testing_x.concat(testing_x_categorical);
+
+		training_x.display();
+		validation_x.display();
+		testing_x.display();
+
 		MLP mlp;
 
 		mlp.create({3, 3});
